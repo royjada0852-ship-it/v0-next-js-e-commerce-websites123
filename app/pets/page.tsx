@@ -8,7 +8,6 @@ import { createClient } from "@/lib/supabase/client"
 
 const PET_CATEGORIES = ["Dogs", "Cats", "Birds", "Rabbits"]
 const PET_PURPOSES = ["Family Pet", "Guard Dog", "Companion", "Show Quality"]
-// </CHANGE>
 
 export default function PetsPage() {
   const [products, setProducts] = useState<Product[]>([])
@@ -21,7 +20,10 @@ export default function PetsPage() {
 
   const loadProducts = async () => {
     const supabase = createClient()
-    if (!supabase) return
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
 
     const { data, error } = await supabase
       .from("products")
@@ -79,7 +81,6 @@ export default function PetsPage() {
 
     setFilteredProducts(filtered)
   }
-  // </CHANGE>
 
   return (
     <main className="container mx-auto px-4 py-12">
@@ -98,7 +99,6 @@ export default function PetsPage() {
         showPurposes={true}
         maxPrice={50000}
       />
-      {/* </CHANGE> */}
 
       {/* Products Grid */}
       {loading ? (

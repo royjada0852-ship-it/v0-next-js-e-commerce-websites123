@@ -21,7 +21,10 @@ export default function FoodPage() {
 
   const loadProducts = async () => {
     const supabase = createClient()
-    if (!supabase) return
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
 
     const { data, error } = await supabase
       .from("products")
