@@ -1,0 +1,20 @@
+{
+  "name": "Welcome to DOGIFY !!",
+  "short_name": "DOGIFY",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/icons/icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/Dogify.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

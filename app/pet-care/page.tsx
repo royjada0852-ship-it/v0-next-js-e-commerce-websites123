@@ -1,0 +1,190 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { ProductCard } from "@/components/product-card"
+import { AdvancedFilter, type AdvancedFilterOptions } from "@/components/advanced-filter"
+import type { Product } from "@/lib/supabase/queries-client"
+import { createClient } from "@/lib/supabase/client"
+import { Sparkles } from "lucide-react"
+
+const PET_CARE_CATEGORIES = ["Shampoo", "Powder", "Cream", "Solution", "Spray"]
+const PET_CARE_TYPES = ["Shampoo", "Powder", "Cream", "Solution", "Spray"]
+const PET_CARE_PURPOSES = ["Anti-tick", "Skin care", "Hygiene", "General health", "Grooming"]
+
+export default function PetCarePage() {
+  const [products, setProducts] = useState<Product[]>([])
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
+  const [selectedCategory, setSelectedCategory] = useState<string>("all")
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    loadProducts()
+  }, [])
+
+  const loadProducts = async () => {
+    const supabase = createClient()
+    if (!supabase) return
+
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .eq("product_type", "pet_care")
+      .order("sub_category", { ascending: true })
+
+    if (!error && data) {
+      setProducts(data)
+      setFilteredProducts(data)
+    }
+    setLoading(false)
+  }
+
+  const handleFilterChange = (filters: AdvancedFilterOptions) => {
+    let filtered = [...products]
+
+    // Apply search filter
+    if (filters.searchTerm.trim()) {
+      const searchLower = filters.searchTerm.toLowerCase()
+      filtered = filtered.filter(
+        (p) =>
+          p.name.toLowerCase().includes(searchLower) ||
+          p.description?.toLowerCase().includes(searchLower) ||
+          p.sub_category?.toLowerCase().includes(searchLower),
+      )
+    }
+
+    // Apply category filter (by sub_category)
+    if (filters.categories.length > 0) {
+      filtered = filtered.filter((p) => {
+        const subCategory = (p.sub_category || "").toLowerCase()
+        return filters.categories.some((cat) => subCategory.includes(cat.toLowerCase()))
+      })
+      setSelectedCategory(filters.categories[0] || "all")
+    } else {
+      setSelectedCategory("all")
+    }
+
+    // Apply product type filter
+    if (filters.productTypes.length > 0) {
+      filtered = filtered.filter((p) => {
+        const subCategory = (p.sub_category || "").toLowerCase()
+        return filters.productTypes.some((type) => subCategory.includes(type.toLowerCase()))
+      })
+    }
+
+    // Apply purpose filter
+    if (filters.purposes.length > 0) {
+      filtered = filtered.filter((p) => {
+        const name = p.name.toLowerCase()
+        const description = (p.description || "").toLowerCase()
+        return filters.purposes.some(
+          (purpose) => name.includes(purpose.toLowerCase()) || description.includes(purpose.toLowerCase()),
+        )
+      })
+    }
+
+    // Apply price range filter
+    filtered = filtered.filter((p) => p.price >= filters.priceRange.min && p.price <= filters.priceRange.max)
+
+    // Apply sorting
+    switch (filters.sortBy) {
+      case "price_asc":
+        filtered.sort((a, b) => a.price - b.price)
+        break
+      case "price_desc":
+        filtered.sort((a, b) => b.price - a.price)
+        break
+      case "name":
+        filtered.sort((a, b) => a.name.localeCompare(b.name))
+        break
+      case "newest":
+        filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        break
+    }
+
+    setFilteredProducts(filtered)
+  }
+
+  // Group products by sub-category for display
+  const productsByCategory = PET_CARE_CATEGORIES.reduce(
+    (acc, category) => {
+      acc[category.toLowerCase()] = filteredProducts.filter(
+        (p) => p.sub_category?.toLowerCase() === category.toLowerCase(),
+      )
+      return acc
+    },
+    {} as Record<string, Product[]>,
+  )
+
+  const hasFilteredProducts = filteredProducts.length > 0
+
+  return (
+    <main className="container mx-auto px-4 py-12">
+      {/* Hero Section */}
+      <div className="hero-section mb-12 relative overflow-hidden">
+        <div className="absolute top-14 right-28 text-white/20 floating-icon hidden md:block">
+          <Sparkles size={40} />
+        </div>
+        <div className="relative z-10">
+          <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4">Pet Care Products</h1>
+          <p className="text-white/90 text-lg">Complete grooming and care solutions for your beloved pets</p>
+        </div>
+      </div>
+
+      <AdvancedFilter
+        onFilterChange={handleFilterChange}
+        availableCategories={PET_CARE_CATEGORIES}
+        availableProductTypes={PET_CARE_TYPES}
+        availablePurposes={PET_CARE_PURPOSES}
+        showCategoryPills={true}
+        showProductTypes={true}
+        showPurposes={true}
+        maxPrice={5000}
+      />
+
+      {/* Products by Category */}
+      {loading ? (
+        <div className="text-center py-20">
+          <div className="inline-block w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="mt-4 text-gray-600">Loading pet care products...</p>
+        </div>
+      ) : hasFilteredProducts ? (
+        <div className="space-y-16">
+          {selectedCategory === "all" ? (
+            // Show all categories
+            PET_CARE_CATEGORIES.map((category) => {
+              const categoryProducts = productsByCategory[category.toLowerCase()]
+              if (!categoryProducts || categoryProducts.length === 0) return null
+
+              return (
+                <section key={category} className="slide-up">
+                  <div className="flex items-center gap-3 mb-6">
+                    <h2 className="text-3xl font-bold capitalize text-gradient">{category}</h2>
+                    <span className="bg-teal-100 text-teal-700 px-3 py-1 rounded-full text-sm font-semibold">
+                      {categoryProducts.length} Products
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {categoryProducts.map((product) => (
+                      <ProductCard key={product.id} product={product} />
+                    ))}
+                  </div>
+                </section>
+              )
+            })
+          ) : (
+            // Show selected category only
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="text-center py-20">
+          <p className="text-gray-600 text-lg">No pet care products found. Try adjusting your filters.</p>
+        </div>
+      )}
+    </main>
+  )
+}
