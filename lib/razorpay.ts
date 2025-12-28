@@ -29,6 +29,9 @@ declare global {
   }
 }
 
+/**
+ * Dynamically loads the Razorpay checkout script if it's not already present.
+ */
 export function loadRazorpayScript(): Promise<boolean> {
   return new Promise((resolve) => {
     if (typeof window !== "undefined" && window.Razorpay) {
@@ -44,6 +47,10 @@ export function loadRazorpayScript(): Promise<boolean> {
   })
 }
 
+/**
+ * Initiates the Razorpay payment modal with the provided options.
+ * Requires loadRazorpayScript to succeed first.
+ */
 export async function initiateRazorpayPayment(options: RazorpayOptions) {
   const isLoaded = await loadRazorpayScript()
 
@@ -52,6 +59,7 @@ export async function initiateRazorpayPayment(options: RazorpayOptions) {
     return false
   }
 
+  console.log("[v0] Initiating Razorpay with Order ID:", options.order_id)
   const razorpay = new window.Razorpay(options)
   razorpay.open()
   return true

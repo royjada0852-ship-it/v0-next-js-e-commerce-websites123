@@ -5,7 +5,7 @@ export async function POST(request: Request) {
   try {
     const { amount, productId, productName, customerDetails } = await request.json()
 
-    // Check if Razorpay credentials are configured
+    // Check if Razorpay credentials are configured (Set these in the Vercel/v0 project settings)
     if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
       console.error("[v0] Razorpay credentials not configured")
       return NextResponse.json(
@@ -20,9 +20,9 @@ export async function POST(request: Request) {
       key_secret: process.env.RAZORPAY_KEY_SECRET,
     })
 
-    // Create Razorpay order
+    // Create Razorpay order (amount must be in smallest currency unit, e.g., Paise for INR)
     const order = await razorpay.orders.create({
-      amount: Math.round(amount * 100), // Convert to paise
+      amount: Math.round(amount * 100), // Convert INR to Paise
       currency: "INR",
       receipt: `receipt_${Date.now()}`,
       notes: {

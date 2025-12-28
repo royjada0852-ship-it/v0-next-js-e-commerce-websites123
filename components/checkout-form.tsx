@@ -74,7 +74,7 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
     setIsLoading(true)
 
     try {
-      // Create Razorpay order
+      // Step 1: Create a secure Razorpay order via the server-side API
       const orderResponse = await fetch("/api/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -92,7 +92,7 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
         throw new Error(orderData.error || "Failed to create order")
       }
 
-      // Load Razorpay script
+      // Step 2: Load the Razorpay SDK and open the payment interface
       const script = document.createElement("script")
       script.src = "https://checkout.razorpay.com/v1/checkout.js"
       script.async = true
@@ -107,7 +107,7 @@ export function CheckoutForm({ product }: CheckoutFormProps) {
           description: product.name,
           order_id: orderData.order.id,
           handler: async (response: any) => {
-            // Verify payment
+            // Step 3: Verify the payment on the server after the modal closes successfully
             const verifyResponse = await fetch("/api/verify-payment", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
